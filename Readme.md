@@ -1,171 +1,267 @@
 # Cloud-Native Battery Data Intelligence Platform
 
-## Project Overview
+A data engineering project for processing, validating, and analyzing lithium-ion battery aging data using Python and modern data infrastructure.
 
-An end-to-end Data Engineering project focused on building a scalable, reproducible, and cloud-native data platform for battery performance and degradation analytics.
+## 1. Project Overview
 
-The platform processes publicly available lithium-ion battery aging data from NASA, transforming raw experimental measurements into structured datasets suitable for quality validation, analytics, and downstream applications.
+Battery testing systems generate large volumes of experimental data, including voltage, current, temperature, discharge capacity, and charge/discharge cycle information.
 
-## Problem Statement
+These measurements are often stored in complex scientific file formats that are not immediately suitable for SQL analytics, dashboards, or cloud-based applications.
 
-Battery testing systems generate large volumes of time-series data, including voltage, current, temperature, capacity, and charging/discharging cycle information.
+This project aims to build an automated, reproducible data platform that converts raw battery data into structured, quality-checked datasets and eventually supports cloud storage, orchestration, and battery degradation analytics.
 
-Raw experimental data often comes in complex or nested formats, making it difficult to integrate, validate, and analyze efficiently.
+## 2. Problem Statement
 
-**Our solution:** Develop an automated data engineering pipeline that ingests battery measurements, standardizes the data, validates its quality, and prepares analysis-ready datasets.
+Raw battery datasets present several engineering challenges:
 
-## Dataset
+- Nested scientific data formats make direct analysis difficult
+- Manual processing does not scale as more battery files are added
+- Missing or unusual measurements can affect downstream analysis
+- Without data lineage, it is difficult to reproduce and verify results
+- Large time-series datasets require efficient storage and processing
+
+**Solution:** Develop a modular ETL pipeline with dynamic file discovery, standardized schemas, data validation, and analytics-ready storage.
+
+## 3. Dataset
 
 **Source:** NASA Prognostics Center of Excellence — Li-ion Battery Aging Dataset
 
-**Dataset:** [NASA Battery Aging Dataset](https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/)
+Dataset reference: https://www.nasa.gov/intelligent-systems-division/discovery-and-systems-health/pcoe/pcoe-data-set-repository/
 
-| Attribute | Description |
-|---|---|
-| Battery Type | Lithium-ion |
-| Battery IDs | B0005, B0006, B0007, B0018 |
-| Data Format | MATLAB `.mat` |
-| Operations | Charge, Discharge, Impedance |
-| Measurements | Voltage, Current, Temperature, Time, Capacity |
+The initial implementation uses four battery files:
 
-### Dataset Processing Results
+- B0005
+- B0006
+- B0007
+- B0018
 
-The initial pipeline processed four battery files and produced:
+The dataset contains charge, discharge, and impedance operations. Measurements include battery voltage, current, temperature, elapsed time, and discharge capacity.
 
-| Metric | Result |
+### Processing Results
+
+| Metric | Value |
 |---|---:|
 | Battery files processed | 4 |
-| Battery cycle records | 2,167 |
+| Total cycle records | 2,167 |
 | Time-series measurement records | 2,089,050 |
-| Structured output format | Apache Parquet |
+| Output format | Apache Parquet |
 
-These results were obtained from the initial local transformation pipeline.
+These counts were obtained from the successfully executed transformation pipeline.
 
-## Current Architecture
+## 4. Current ETL Architecture
 
-```text
-NASA Battery Dataset
-        |
-        v
-Raw MATLAB Files (.mat)
-        |
-        v
-Python + SciPy
-        |
-        v
-Dynamic Battery File Discovery
-        |
-        v
-NumPy + Pandas Transformation
-        |
-        v
-Measurement Length Validation
-        |
-        v
-Structured Parquet Datasets
-```
+NASA Battery Dataset (.mat)
+↓
+Dynamic File Discovery (Python pathlib)
+↓
+MATLAB Extraction (SciPy)
+↓
+Data Transformation (NumPy + Pandas)
+↓
+Structured Cycle and Measurement Tables
+↓
+Apache Parquet Storage
+↓
+Data Quality Validation and Anomaly Investigation
 
-## Implemented Features
+A curated analytics layer has been implemented in code and is pending execution verification.
 
-- Downloaded and inspected NASA's public battery aging dataset.
-- Loaded nested MATLAB structures using SciPy.
-- Implemented dynamic discovery of battery files.
-- Extracted battery cycle metadata and time-series measurements.
-- Separated cycle-level records from measurement-level records.
-- Added checks for mismatched measurement array lengths.
-- Exported structured datasets in Apache Parquet format.
+## 5. Implemented Features
 
-## Technology Stack
+### Data ingestion and transformation
 
-**Currently implemented**
-- Python 3.11
-- Pandas and NumPy
-- SciPy
-- Apache Parquet / PyArrow
-- Git and GitHub
+- Read nested NASA MATLAB battery files using SciPy
+- Automatically discover `B*.mat` files without hardcoding battery IDs
+- Extract charge, discharge, and impedance cycle metadata
+- Extract voltage, current, temperature, and elapsed-time measurements for charge and discharge operations
+- Preserve discharge capacity values
+- Validate measurement array lengths before constructing records
+- Generate separate cycle-level and measurement-level datasets
 
-**Planned**
-- Data quality validation and automated tests with pytest
-- DVC for reproducible pipelines and data versioning
-- Docker and Docker Compose
-- GitHub Actions for CI/CD
-- PostgreSQL and SQL analytics
-- AWS S3 for cloud storage
-- Apache Airflow for orchestration
-- FastAPI for analytics endpoints
-- Kubernetes for container orchestration
-- Monitoring and performance benchmarking
+### Data storage
 
-## Repository Structure
+- Store transformed datasets in Apache Parquet format
+- Preserve `battery_id` and `cycle_id` for joining related data
+- Separate raw input files from processed output files
+
+### Data quality
+
+- Identify missing measurement values
+- Check duplicate cycle identifiers
+- Validate supported cycle types
+- Check discharge capacity values
+- Identify orphan measurements
+- Flag voltage readings outside a provisional 0–6 V screening range
+- Investigate the locations and patterns of anomalies
+
+## 6. Data Quality Findings
+
+Validation of 2,089,050 measurement records produced:
+
+| Validation Check | Result |
+|---|---:|
+| Rows with missing sensor measurements | 2 |
+| Voltage readings outside 0–6 V | 4 |
+| Duplicate cycle identifiers | 0 |
+| Invalid cycle types | 0 |
+| Invalid discharge capacities | 0 |
+| Orphan measurements | 0 |
+
+### Anomaly Investigation
+
+- B0018, cycle 115: two charging records with missing voltage, current, and temperature
+- B0005, cycle 85: high voltage reading at the start of charging
+- B0006, cycle 85: high voltage reading at the start of charging
+- B0006, cycle 616: slightly negative voltage reading
+- B0007, cycle 85: high voltage reading at the start of charging
+
+These observations are flagged for further investigation. The voltage threshold is an exploratory screening rule, not a validated universal specification.
+
+The original measurements are retained to support reproducibility and further analysis.
+
+## 7. Technology Stack
+
+### Currently used
+
+| Technology | Purpose |
+|---|---|
+| Python 3.11 | Main pipeline implementation |
+| SciPy | MATLAB file extraction |
+| NumPy | Numeric array processing |
+| Pandas | Data transformation and validation |
+| Apache Parquet / PyArrow | Columnar data storage |
+| Git and GitHub | Version control |
+
+### Planned integrations
+
+| Technology | Purpose |
+|---|---|
+| pytest | Automated data and pipeline testing |
+| DVC | Data and pipeline reproducibility |
+| Docker | Containerized execution |
+| GitHub Actions | Continuous integration |
+| PostgreSQL | Structured analytics queries |
+| AWS S3 | Cloud object storage |
+| Apache Airflow | Workflow orchestration |
+| FastAPI | Data access and analytics APIs |
+| Kubernetes | Container orchestration, if warranted by deployment needs |
+
+## 8. Project Structure
 
 ```text
 battery-data-platform/
 ├── src/
 │   ├── inspect_battery.py
-│   └── transform.py
+│   ├── transform.py
+│   ├── validate.py
+│   ├── investigate_anomalies.py
+│   └── clean.py
 ├── data/
 │   ├── raw/
-│   └── processed/
-├── config/
-├── tests/
-├── reports/
-├── notebooks/
-├── docs/
+│   ├── processed/
+│   └── curated/
 ├── requirements.txt
 ├── .gitignore
 └── README.md
 ```
 
-## Running the Pipeline
+Some files and folders, including `clean.py` and the curated outputs, may not yet have been executed or verified locally.
 
-### 1. Create and activate the environment
+## 9. Local Setup
+
+### Clone the repository
+
+```bash
+git clone https://github.com/Manasvinikottapally/battery-data-platform.git
+cd battery-data-platform
+```
+
+### Create the Python environment
 
 ```bash
 python3.11 -m venv .venv
 source .venv/bin/activate
-```
-
-### 2. Install dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
-### 3. Prepare the dataset
+### Prepare the input data
 
-Download the NASA Battery Aging Dataset and extract the MATLAB files into:
+Download the NASA Li-ion Battery Aging Dataset and extract the selected MATLAB files into:
 
-```text
-data/raw/nasa/batteries/
-```
+`data/raw/nasa/batteries/`
 
-### 4. Run the transformation
+### Run the transformation
 
 ```bash
 python src/transform.py
 ```
 
-### 5. Generated Outputs
+Expected processed outputs:
 
-```text
-data/processed/
-├── battery_cycles.parquet
-└── battery_measurements.parquet
+- `data/processed/battery_cycles.parquet`
+- `data/processed/battery_measurements.parquet`
+
+### Run data validation
+
+```bash
+python src/validate.py
 ```
 
-## Engineering Objectives
+### Investigate anomalies
 
-The project follows four core principles:
+```bash
+python src/investigate_anomalies.py
+```
 
-- **Reproducibility:** Make pipeline execution consistent and repeatable.
-- **Traceability:** Track which source battery files produced each processed dataset.
-- **Validation:** Identify missing, inconsistent, and invalid measurements.
-- **Cost and Performance:** Benchmark processing time, resource utilization, and infrastructure costs.
+### Generate curated outputs
 
-## Project Status
+```bash
+python src/clean.py
+```
 
-**Current Phase:** Data Ingestion and Transformation — Completed
+This last command is the next execution step to verify. The script is intended to generate:
 
-**Next Phase:** Data Quality Validation, Automated Testing, and DVC Integration.
+- `data/curated/battery_measurements_clean.parquet`
+- `data/curated/battery_measurements_flagged.parquet`
 
-This project is under active development. The README will be updated as additional capabilities are implemented.
+## 10. Engineering Principles
+
+The project is being developed around four key principles:
+
+**Reproducibility:** Make it possible to rerun processing and reproduce results from known inputs.
+
+**Traceability:** Track input files, transformations, and resulting datasets.
+
+**Data quality:** Detect and document missing, unexpected, or inconsistent measurements.
+
+**Performance and cost awareness:** Measure pipeline runtime, resource usage, and future infrastructure costs.
+
+## 11. Development Roadmap
+
+- [x] Set up project environment
+- [x] Download and inspect NASA data
+- [x] Implement dynamic file discovery
+- [x] Build MATLAB-to-Parquet transformation pipeline
+- [x] Generate structured datasets
+- [x] Run data-quality validation
+- [x] Investigate anomalies
+- [ ] Verify curated-data generation
+- [ ] Add automated pytest coverage
+- [ ] Add DVC pipeline tracking and dataset manifests
+- [ ] Containerize the pipeline with Docker
+- [ ] Configure GitHub Actions CI
+- [ ] Integrate PostgreSQL for SQL analytics
+- [ ] Add AWS S3 storage
+- [ ] Implement workflow orchestration
+- [ ] Build battery degradation analytics and API endpoints
+- [ ] Benchmark pipeline performance and document cloud costs
+
+## 12. Current Status
+
+**Phase 1 — Data Ingestion and Transformation: Completed**
+
+**Phase 2 — Data Quality Investigation: Completed initial checks**
+
+**Next focus — Curated Data Verification and Automated Testing**
+
+This project is actively being developed as a practical portfolio project demonstrating Data Engineering, backend engineering, automation, and cloud infrastructure skills.

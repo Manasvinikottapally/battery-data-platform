@@ -2,6 +2,10 @@
 from pathlib import Path
 import pandas as pd
 
+# -------------------------------------
+# STEP 1: Load processed Parquet files
+# -------------------------------------
+
 DATA_DIR = Path("data/processed")
 
 cycles = pd.read_parquet(
@@ -15,36 +19,90 @@ measurements = pd.read_parquet(
 print("\nBATTERY DATA QUALITY REPORT")
 print("=" * 45)
 
-# 1. Record counts
-print(f"Total cycles: {len(cycles):,}")
-print(f"Total measurements: {len(measurements):,}")
+# -------------------------------------
+# STEP 2: Verify record counts
+# -------------------------------------
 
-# 2. Missing values
+print(f"Total cycle records: {len(cycles):,}")
+print(f"Total measurement records: {len(measurements):,}")
+
+# -------------------------------------
+# STEP 3: Check missing values
+# -------------------------------------
+
 print("\nMissing measurement values:")
-print(
-    measurements[
-        ["time_seconds", "voltage_v",
-         "current_a", "temperature_c"]
-    ].isna().sum()
-)
 
-# 3. Duplicate cycle identifiers
+required_columns = [
+    "battery_id",
+    "cycle_id",
+    "time_seconds",
+    "voltage_v",
+    "current_a",
+    "temperature_c"
+]
+
+missing_values = measurements[
+    required_columns
+].isna().sum()
+
+print(missing_values)
+
+# -------------------------------------
+# STEP 4: Check duplicate cycle IDs
+# -------------------------------------
+
 duplicate_cycles = cycles.duplicated(
     subset=["battery_id", "cycle_id"]
 ).sum()
 
 print(f"\nDuplicate cycle IDs: {duplicate_cycles}")
 
-# 4. Check allowed operation types
-valid_types = {"charge", "discharge", "impedance"}
+# -------------------------------------
+# STEP 5: Check cycle types
+# -------------------------------------
 
-invalid_types = (
+valid_types = {
+    "charge",
+    "discharge",
+    "impedance"
+}
+
+invalid_cycle_types = (
     ~cycles["cycle_type"].isin(valid_types)
 ).sum()
 
-print(f"Invalid cycle types: {invalid_types}")
+print(f"Invalid cycle types: {invalid_cycle_types}")
 
-# 5. Check measurement-to-cycle relationships
+# -------------------------------------
+# STEP 6: Check discharge capacity
+# -------------------------------------
+
+discharge_cycles = cycles[
+    cycles["cycle_type"] == "discharge"
+]
+
+invalid_capacity = (
+    discharge_cycles["capacity_ah"].isna()
+    | (discharge_cycles["capacity_ah"] <= 0)
+).sum()
+
+print(f"Invalid discharge capacity: {invalid_capacity}")
+
+# -------------------------------------
+# STEP 7: Check voltage range
+# -------------------------------------
+
+invalid_voltage = (
+    (measurements["voltage_v"] < 0)
+    | (measurements["voltage_v"] > 6)
+).sum()
+
+print(f"Voltage values outside 0-6 V: {invalid_voltage}")
+
+# -------------------------------------
+# STEP 8: Verify measurement relationships
+# -------------------------------------
+
 cycle_keys = pd.MultiIndex.from_frame(
     cycles[["battery_id", "cycle_id"]]
 )
@@ -53,30 +111,16 @@ measurement_keys = pd.MultiIndex.from_frame(
     measurements[["battery_id", "cycle_id"]]
 )
 
-orphan_records = (
+orphan_measurements = (
     ~measurement_keys.isin(cycle_keys)
 ).sum()
 
-print(f"Orphan measurements: {orphan_records}")
+print(f"Orphan measurements: {orphan_measurements}")
 
-# 6. Validate discharge capacity
-discharge = cycles[
-    cycles["cycle_type"] == "discharge"
-]
+# -------------------------------------
+# STEP 9: Display results
+# -------------------------------------
 
-invalid_capacity = (
-    discharge["capacity_ah"].isna()
-    | (discharge["capacity_ah"] <= 0)
-).sum()
-
-print(f"Invalid discharge capacities: {invalid_capacity}")
-
-# 7. Basic voltage screening
-invalid_voltage = (
-    (measurements["voltage_v"] < 0)
-    | (measurements["voltage_v"] > 6)
-).sum()
-
-print(f"Voltage readings outside 0-6 V: {invalid_voltage}")
-
-print("\nValidation checks completed.")
+print("\n" + "=" * 45)
+print("DATA QUALITY CHECKS COMPLETED")
+print("=" * 45)
