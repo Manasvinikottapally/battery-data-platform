@@ -1,0 +1,67 @@
+schema: '2.0'
+stages:
+  transform:
+    cmd: ./.venv/bin/python src/verify_manifest.py && ./.venv/bin/python 
+      src/transform.py
+    deps:
+    - path: data/manifest.json
+      hash: md5
+      md5: 54671bd127050ae49726a73a3e8b76b0
+      size: 1055
+    - path: data/raw/nasa/batteries
+      hash: md5
+      md5: 291877b31d83e4056a0de44294df9535.dir
+      size: 56539545
+      nfiles: 5
+    - path: src/transform.py
+      hash: md5
+      md5: e52bc74231396aa5b870419ab9a9391f
+      size: 5520
+    - path: src/verify_manifest.py
+      hash: md5
+      md5: 9c7b45f5565b55f7cae76afc19edead4
+      size: 1514
+    outs:
+    - path: data/processed/battery_cycles.parquet
+      hash: md5
+      md5: acbb0fe4f9a2fccc61dcbab7e722ca0f
+      size: 13182
+    - path: data/processed/battery_measurements.parquet
+      hash: md5
+      md5: 88e37c1cf808522059b3e3777eb8ee5e
+      size: 62783594
+  validate:
+    cmd: ./.venv/bin/python src/validate.py
+    deps:
+    - path: data/processed/battery_cycles.parquet
+      hash: md5
+      md5: acbb0fe4f9a2fccc61dcbab7e722ca0f
+      size: 13182
+    - path: data/processed/battery_measurements.parquet
+      hash: md5
+      md5: 88e37c1cf808522059b3e3777eb8ee5e
+      size: 62783594
+    - path: src/validate.py
+      hash: md5
+      md5: a5ff325344591686ba7c918d84cd7f61
+      size: 2807
+  curate:
+    cmd: ./.venv/bin/python src/clean.py
+    deps:
+    - path: data/processed/battery_measurements.parquet
+      hash: md5
+      md5: 88e37c1cf808522059b3e3777eb8ee5e
+      size: 62783594
+    - path: src/clean.py
+      hash: md5
+      md5: 9796072f97ff29a4704fae961c80666b
+      size: 2005
+    outs:
+    - path: data/curated/battery_measurements_clean.parquet
+      hash: md5
+      md5: 3cff105cfd66dcff80282d16f6a5038f
+      size: 62785480
+    - path: data/curated/battery_measurements_flagged.parquet
+      hash: md5
+      md5: 9fa57f04fc562b1eddc98623c05db3de
+      size: 5408

@@ -1,0 +1,26 @@
+stages:
+  transform:
+    cmd: ./.venv/bin/python src/verify_manifest.py && ./.venv/bin/python 
+      src/transform.py
+    deps:
+    - data/manifest.json
+    - data/raw/nasa/batteries
+    - src/transform.py
+    - src/verify_manifest.py
+    outs:
+    - data/processed/battery_cycles.parquet
+    - data/processed/battery_measurements.parquet
+  validate:
+    cmd: ./.venv/bin/python src/validate.py
+    deps:
+    - data/processed/battery_cycles.parquet
+    - data/processed/battery_measurements.parquet
+    - src/validate.py
+  curate:
+    cmd: ./.venv/bin/python src/clean.py
+    deps:
+    - data/processed/battery_measurements.parquet
+    - src/clean.py
+    outs:
+    - data/curated/battery_measurements_clean.parquet
+    - data/curated/battery_measurements_flagged.parquet

@@ -6,6 +6,8 @@ __pycache__/
 !.env.example
 .DS_Store
 
-# Large datasets (DVC will manage these later)
-data/raw/
-data/processed/
+# Raw NASA battery files managed by DVC
+data/raw/nasa/batteries/
+
+# Downloaded NASA dataset archives
+data/raw/nasa/*.zip

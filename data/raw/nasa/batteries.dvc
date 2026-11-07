@@ -1,0 +1,6 @@
+outs:
+- md5: 291877b31d83e4056a0de44294df9535.dir
+  size: 56539545
+  nfiles: 5
+  hash: md5
+  path: batteries

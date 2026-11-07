@@ -1,0 +1,32 @@
+{
+  "dataset": "NASA Li-ion Battery Aging Dataset",
+  "source_url": "https://phm-datasets.s3.amazonaws.com/NASA/5.+Battery+Data+Set.zip",
+  "generated_at_utc": "2026-10-31T02:22:26.029081+00:00",
+  "file_count": 4,
+  "files": [
+    {
+      "battery_id": "B0005",
+      "path": "data/raw/nasa/batteries/B0005.mat",
+      "size_bytes": 15956874,
+      "sha256": "0eae4585baf3f200c09fe24c5ab884f1889679fc75206ca1aa19da704104f0b0"
+    },
+    {
+      "battery_id": "B0006",
+      "path": "data/raw/nasa/batteries/B0006.mat",
+      "size_bytes": 16028159,
+      "sha256": "fa818ab4db5db8ab21e910b6dd6c3e20d3761bb9672089e1a4de8f96074616c5"
+    },
+    {
+      "battery_id": "B0007",
+      "path": "data/raw/nasa/batteries/B0007.mat",
+      "size_bytes": 16049460,
+      "sha256": "d022afa086efaf54ab5b63f05220f5be178c8027e2fa8d68589db0e85a441a3b"
+    },
+    {
+      "battery_id": "B0018",
+      "path": "data/raw/nasa/batteries/B0018.mat",
+      "size_bytes": 8502218,
+      "sha256": "d1e6c923a43ea1c9666b3a90bbb521757a067fd60b4d17dbfaa49c50b179da69"
+    }
+  ]
+}
